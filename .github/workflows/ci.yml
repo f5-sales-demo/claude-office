@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3"
+
+      - name: Compile
+        run: bun build ./proxy.mjs --compile --outfile claude-office
+
+      - name: CLI smoke tests
+        run: |
+          set -euo pipefail
+          ./claude-office help | grep -q "claude-office"
+          # run with no upstream configured must fail with guidance, not start
+          if CLAUDE_OFFICE_DIR="$(mktemp -d)" ./claude-office run; then
+            echo "expected non-zero exit when no upstream configured"; exit 1
+          fi
+          echo "smoke tests passed"

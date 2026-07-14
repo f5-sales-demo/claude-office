@@ -1,0 +1,28 @@
+{
+  "name": "claude-office",
+  "version": "0.1.0",
+  "description": "Local CORS proxy so the Claude for Office add-in can use a self-hosted, Anthropic-compatible LLM gateway",
+  "type": "module",
+  "bin": {
+    "claude-office": "proxy.mjs"
+  },
+  "files": [
+    "proxy.mjs"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/f5-sales-demo/claude-office.git"
+  },
+  "keywords": [
+    "claude",
+    "office",
+    "cors",
+    "proxy",
+    "anthropic",
+    "llm-gateway"
+  ]
+}

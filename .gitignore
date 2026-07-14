@@ -1,0 +1,9 @@
+# Never commit certs, keys, local config, logs, or build output
+*.pem
+*.key
+config.json
+*.log
+node_modules/
+claude-office
+*.zip
+.DS_Store

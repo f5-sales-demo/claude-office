@@ -1,0 +1,122 @@
+name: release
+
+# On a version tag: compile standalone binaries, publish a GitHub Release with
+# them attached, then update the Homebrew formula in f5-sales-demo/homebrew-tap.
+# Users install prebuilt binaries via brew — never from source.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)release, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3"
+
+      - name: Compile macOS binaries (arm64 + x64) and package
+        run: |
+          set -euo pipefail
+          build() {
+            target="$1"; asset="$2"
+            echo "building $asset ($target)"
+            bun build ./proxy.mjs --compile --target="$target" --outfile claude-office
+            codesign --force --sign - --timestamp=none claude-office
+            zip -j "$asset.zip" claude-office
+            rm -f claude-office
+          }
+          build bun-darwin-arm64 claude-office-darwin-arm64
+          build bun-darwin-x64   claude-office-darwin-x64
+          ls -la ./*.zip
+
+      - name: Create / update GitHub Release with binaries
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" claude-office-darwin-arm64.zip claude-office-darwin-x64.zip --clobber
+
+      - name: Generate and push Homebrew formula to the tap
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          ARM_SHA=$(shasum -a 256 claude-office-darwin-arm64.zip | cut -d' ' -f1)
+          X64_SHA=$(shasum -a 256 claude-office-darwin-x64.zip   | cut -d' ' -f1)
+
+          cat > claude-office.rb <<EOF
+          # typed: false
+          # frozen_string_literal: true
+
+          class ClaudeOffice < Formula
+            desc "Local CORS proxy so the Claude for Office add-in can use a self-hosted LLM gateway"
+            homepage "https://github.com/f5-sales-demo/claude-office"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/f5-sales-demo/claude-office/releases/download/${TAG}/claude-office-darwin-arm64.zip"
+                sha256 "${ARM_SHA}"
+              else
+                url "https://github.com/f5-sales-demo/claude-office/releases/download/${TAG}/claude-office-darwin-x64.zip"
+                sha256 "${X64_SHA}"
+              end
+            end
+
+            def install
+              bin.install "claude-office"
+            end
+
+            service do
+              run [opt_bin/"claude-office", "run"]
+              keep_alive true
+              log_path var/"log/claude-office.log"
+              error_log_path var/"log/claude-office.log"
+            end
+
+            def caveats
+              <<~EOS
+                Configure your own gateway, then start the service:
+                  claude-office set-upstream https://your-gateway.internal.example
+                  brew services start claude-office
+                Get the add-in Gateway URL (must be on VPN):
+                  claude-office url
+              EOS
+            end
+          end
+          EOF
+
+          echo "generated formula:"; cat claude-office.rb
+          git clone "https://x-access-token:${RELEASE_TOKEN}@github.com/f5-sales-demo/homebrew-tap.git" tap
+          cp claude-office.rb tap/claude-office.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add claude-office.rb
+          if git diff --cached --quiet; then
+            echo "no formula change"
+          else
+            git commit -m "Update claude-office to ${TAG}"
+            git push
+          fi
