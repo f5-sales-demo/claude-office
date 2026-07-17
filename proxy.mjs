@@ -25,7 +25,7 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
-const VERSION = '0.1.2'; // x-release-please-version
+const VERSION = '0.2.0'; // x-release-please-version
 
 const DIR = process.env.CLAUDE_OFFICE_DIR
   || path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'claude-office');

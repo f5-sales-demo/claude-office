@@ -1,6 +1,6 @@
 {
   "name": "claude-office",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Local CORS proxy so the Claude for Office add-in can use a self-hosted, Anthropic-compatible LLM gateway",
   "type": "module",
   "bin": {
