@@ -58,8 +58,42 @@ instead and skip the proxy entirely.
 
 ## Install
 
+Prebuilt macOS binaries are published to the `f5-sales-demo/homebrew-tap` Homebrew tap.
+They are **Developer ID-signed and Apple-notarized**, so they install and run without
+Gatekeeper "unverified developer" prompts.
+
 ```sh
 brew install f5-sales-demo/tap/claude-office
+```
+
+That one command auto-adds the tap. To add it explicitly first:
+
+```sh
+brew tap f5-sales-demo/tap
+brew install claude-office
+```
+
+**Requirements:** macOS on Apple Silicon (arm64) or Intel (x64). Nothing else to install —
+the binary is self-contained (no Node.js runtime required).
+
+### Upgrade
+
+```sh
+brew upgrade claude-office
+```
+
+### Uninstall
+
+```sh
+brew services stop claude-office   # only if you started it as a service
+brew uninstall claude-office
+```
+
+### Verify the signature (optional)
+
+```sh
+codesign -dvv "$(brew --prefix)/bin/claude-office"
+# expect: Authority=Developer ID Application: … and flags=0x10000(runtime)
 ```
 
 ## Configure & run
