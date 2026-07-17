@@ -173,13 +173,11 @@ jobs:
               <<~EOS
                 Quick start (macOS, while on your VPN):
 
-                1. Point it at YOUR gateway (scheme + host only, no path):
+                1. Point it at YOUR gateway (scheme + host only, no path).
+                   This also starts the background service automatically:
                      claude-office set-upstream https://your-gateway.example.com
 
-                2. Start it in the background:
-                     brew services start claude-office
-
-                3. In the Claude for Office add-in, open the Gateway tab and set:
+                2. In the Claude for Office add-in, open the Gateway tab and set:
                      Gateway URL:  https://127-0-0-1.local-ip.sh:8443/anthropic
                      Token:        your gateway API key
 
