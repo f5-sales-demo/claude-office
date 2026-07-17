@@ -171,11 +171,24 @@ jobs:
 
             def caveats
               <<~EOS
-                Configure your own gateway, then start the service:
-                  claude-office set-upstream https://your-gateway.internal.example
-                  brew services start claude-office
-                Get the add-in Gateway URL (must be on VPN):
-                  claude-office url
+                Quick start (macOS, while on your VPN):
+
+                1. Point it at YOUR gateway (scheme + host only, no path):
+                     claude-office set-upstream https://your-gateway.example.com
+
+                2. Start it in the background:
+                     brew services start claude-office
+
+                3. In the Claude for Office add-in, open the Gateway tab and set:
+                     Gateway URL:  https://127-0-0-1.local-ip.sh:8443/anthropic
+                     Token:        your gateway API key
+
+                   The /anthropic path is the LiteLLM Anthropic passthrough
+                   default. If your gateway serves the Anthropic API under a
+                   different path, change it (or drop it to use the root).
+
+                Reprint the base URL anytime with:  claude-office url
+                Check gateway reachability with:    claude-office doctor
               EOS
             end
           end
