@@ -25,6 +25,8 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
+const VERSION = '0.1.2'; // x-release-please-version
+
 const DIR = process.env.CLAUDE_OFFICE_DIR
   || path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'claude-office');
 const CONFIG_FILE = path.join(DIR, 'config.json');
@@ -133,8 +135,9 @@ function corsHeaders(req, cfg) {
     'access-control-max-age': '600',
     vary: 'Origin',
   };
+  // Only reflect origins on the allowlist (the Claude add-in origins). Other origins
+  // get no Access-Control-Allow-Origin, so the browser blocks the cross-origin read.
   if (allowed) { h['access-control-allow-origin'] = origin; h['access-control-allow-credentials'] = 'true'; }
-  else if (origin) { h['access-control-allow-origin'] = origin; h['access-control-allow-credentials'] = 'true'; }
   return h;
 }
 
@@ -264,6 +267,7 @@ Usage:
   claude-office url                  Print the add-in Gateway URL
   claude-office config              Show resolved config
   claude-office doctor              Diagnostics (cert status, upstream reachability)
+  claude-office version             Print the version
 
 Configure your own gateway; nothing is hardcoded:
   claude-office set-upstream https://your-gateway.internal.example`);
@@ -276,6 +280,7 @@ switch (cmd || 'run') {
   case 'config': cmdConfig(); break;
   case 'url': cmdUrl(); break;
   case 'doctor': cmdDoctor(); break;
+  case 'version': case '--version': case '-v': console.log(`claude-office ${VERSION}`); break;
   case 'help': case '-h': case '--help': cmdHelp(); break;
   default: console.error(`unknown command: ${cmd}`); cmdHelp(); process.exit(1);
 }
