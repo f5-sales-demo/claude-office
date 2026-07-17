@@ -1,0 +1,29 @@
+name: release-please
+
+# Semantic-release automation. On every push to main, release-please inspects the
+# conventional commits since the last release and maintains a "release PR" that bumps
+# the version (feat -> minor, fix/perf -> patch, !/BREAKING -> major) and CHANGELOG.
+# Merging that release PR tags vX.Y.Z, which fires release.yml (sign + notarize +
+# publish to the Homebrew tap).
+#
+# The tag is created with RELEASE_TOKEN (a PAT) on purpose: a tag pushed with the
+# default GITHUB_TOKEN would NOT trigger release.yml (GitHub's workflow-recursion
+# prevention). No new secret is needed — RELEASE_TOKEN already exists for releases.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
