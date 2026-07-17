@@ -99,15 +99,17 @@ codesign -dvv "$(brew --prefix)/bin/claude-office"
 ## Configure & run
 
 ```sh
-# 1. Point it at YOUR gateway origin (scheme + host only):
+# 1. Point it at YOUR gateway origin (scheme + host only).
+#    This also (re)starts the background service automatically — no sudo:
 claude-office set-upstream https://your-gateway.internal.example
 
-# 2. Start it as a background service (no sudo):
-brew services start claude-office
-
-# 3. Get the URL to paste into the add-in:
+# 2. Get the URL to paste into the add-in:
 claude-office url
 ```
+
+> `set-upstream` runs `brew services restart claude-office` for you, so the new
+> upstream takes effect immediately. If Homebrew isn't available (e.g. you run the
+> binary standalone), start it yourself: `brew services start claude-office`.
 
 In the add-in's **Gateway** tab set:
 

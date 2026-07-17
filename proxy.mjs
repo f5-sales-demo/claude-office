@@ -213,6 +213,20 @@ function cmdSetUpstream(arg) {
   cfg.upstream = origin;
   writeConfigFile(cfg);
   log(`upstream set to ${origin}  (config: ${CONFIG_FILE})`);
+  restartService();
+}
+
+// Best-effort (re)start of the Homebrew background service so a changed upstream
+// takes effect immediately — the running proxy only reads the upstream at startup.
+// `brew services restart` also starts it if it was stopped. Degrades gracefully
+// when Homebrew isn't present (e.g. the binary is run standalone).
+function restartService() {
+  try {
+    execFileSync('brew', ['services', 'restart', 'claude-office'], { stdio: 'ignore' });
+    log('restarted the background service (brew) so the new upstream is live');
+  } catch {
+    log('to run it in the background:  brew services start claude-office');
+  }
 }
 
 function cmdConfig() {
