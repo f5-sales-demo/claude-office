@@ -133,8 +133,9 @@ function corsHeaders(req, cfg) {
     'access-control-max-age': '600',
     vary: 'Origin',
   };
+  // Only reflect origins on the allowlist (the Claude add-in origins). Other origins
+  // get no Access-Control-Allow-Origin, so the browser blocks the cross-origin read.
   if (allowed) { h['access-control-allow-origin'] = origin; h['access-control-allow-credentials'] = 'true'; }
-  else if (origin) { h['access-control-allow-origin'] = origin; h['access-control-allow-credentials'] = 'true'; }
   return h;
 }
 
