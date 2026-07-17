@@ -6,11 +6,12 @@ policy would otherwise reject the add-in.
 
 ## The problem it solves
 
-The Claude for Office add-in runs inside a WebView served from `https://claude.ai`.
-When you point its **Gateway** connection at an internal gateway (e.g. a LiteLLM /
-Open WebUI deployment behind a WAF) that only allows CORS from its own origin, the
-browser blocks the request and the add-in reports **"Could not reach gateway / Load
-failed"** — even though `curl` to the same gateway works (curl doesn't enforce CORS).
+The Claude for Office add-in is an Office.js web add-in whose task pane runs inside a
+WebView served from `https://pivot.claude.ai`. When you point its **Gateway** connection
+at an internal gateway (e.g. a LiteLLM / Open WebUI deployment behind a WAF) that only
+allows CORS from its own origin, the browser blocks the request and the add-in reports
+**"Could not reach gateway / Load failed"** — even though `curl` to the same gateway works
+(curl doesn't enforce CORS).
 
 `claude-office` runs on your machine and:
 
@@ -22,6 +23,38 @@ failed"** — even though `curl` to the same gateway works (curl doesn't enforce
   certificate to trust manually** and no `sudo`.
 
 Nothing about any specific gateway is baked in — **you configure your own endpoint.**
+
+## The proper fix (and why this proxy exists)
+
+Pointing the add-in at a custom endpoint is **officially supported** — the add-in has a
+built-in **Gateway** connection (base URL + token, also settable via the manifest
+`gateway_url` parameter). The *only* thing that breaks is CORS, and the documented,
+supported fix is server-side: **your gateway — or the WAF in front of it — must return**
+
+- `Access-Control-Allow-Origin: https://pivot.claude.ai` (or `*`) on **every** response,
+  including `GET`, `POST`, `OPTIONS`, **and error responses** (setting it only on the
+  preflight is not enough), and
+- `Access-Control-Allow-Headers: x-api-key, authorization, content-type, anthropic-version`
+  on the preflight.
+
+In F5 terms that's a one-line edge change — a **BIG-IP iRule** or **Distributed Cloud
+HTTP-LB** response-header-injection rule — and it's LLM-agnostic (nothing about the model
+protocol changes).
+
+There is **no** client-side escape hatch: CORS is enforced by the Office WebView, the
+add-in origin (`https://pivot.claude.ai`) is fixed, and there is no manifest field,
+environment variable, registry key, or supported WebView flag that disables it
+(`<AppDomains>` only governs in-frame navigation, not `fetch`/XHR). This is confirmed by
+[Microsoft's same-origin guidance for Office Add-ins][ms-cors] and Anthropic's own gateway
+docs.
+
+So this proxy is **not** a shortcut around a missing setting — it's the correct fallback
+for when you **cannot** change the gateway/WAF (e.g. it's run by an outsourced IT group).
+It fixes only the **CORS + TLS** layer and forwards everything else, streaming included,
+to your gateway unchanged. If you *can* get one CORS header added at the edge, do that
+instead and skip the proxy entirely.
+
+[ms-cors]: https://learn.microsoft.com/en-us/office/dev/add-ins/develop/addressing-same-origin-policy-limitations
 
 ## Install
 

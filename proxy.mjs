@@ -3,8 +3,9 @@
 // Office (PowerPoint/Word/Excel) add-in talk to a self-hosted, Anthropic-compatible
 // LLM gateway that only permits CORS from its own origin.
 //
-// The add-in runs in a WebView from https://claude.ai. When it calls a gateway
-// whose CORS policy rejects that origin, the browser aborts with "Load failed".
+// The add-in's task pane runs in a WebView served from https://pivot.claude.ai.
+// When it calls a gateway whose CORS policy rejects that origin, the browser
+// aborts with "Load failed".
 // This proxy listens locally, answers the CORS preflight, rewrites the outbound
 // Origin so the gateway/WAF accepts it, and injects Access-Control-* headers on
 // the way back. TLS is terminated with a publicly-trusted *.local-ip.sh cert on
@@ -39,7 +40,7 @@ const DEFAULTS = {
   httpsPort: 8443,
   httpPort: 8080,
   hostname: '127-0-0-1.local-ip.sh', // resolves to 127.0.0.1, matches *.local-ip.sh cert
-  allowedOriginSuffixes: ['claude.ai'], // the public Claude add-in origin
+  allowedOriginSuffixes: ['pivot.claude.ai', 'claude.ai'], // add-in task pane (pivot.claude.ai) + OAuth (claude.ai)
 };
 const REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 const HOP = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
